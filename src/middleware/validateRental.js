@@ -6,7 +6,7 @@ export async function validateRental(req, res, next){
     const {customerId, gameId, daysRented} = req.body;
     
     try {
-        const {error} = rentalSchema.validate({daysRented}, { abortEarly: false })
+        const {error} = rentalSchema.validate({customerId, gameId, daysRented}, { abortEarly: false })
         if (error) return res.status(400).send(error.details[0].message);
 
         const customerExists = await db.query('SELECT * FROM customers WHERE id = $1;', [customerId]);
@@ -26,6 +26,47 @@ export async function validateRental(req, res, next){
         next();
     } catch (error) {
         console.log("Erro na validação do rental")
+        res.status(500).send(error.message);
+    }
+}
+
+export async function validateFinish(req, res, next){
+    const {id} = req.params;
+    const numberId = Number(id)
+    try {
+        //if (typeof id !== 'number' || id <= 0) return res.sendStatus(400)
+        
+
+        const rentalExists =  await db.query(
+            `SELECT id, "customerId", "gameId", TO_CHAR("rentDate", 'YYYY-MM-DD') AS "rentDate", "daysRented", TO_CHAR("returnDate", 'YYYY-MM-DD')
+             AS "returnDate", "originalPrice", "delayFee"
+            FROM rentals WHERE id = $1;`, [numberId])
+        if (rentalExists.rowCount === 0) return res.sendStatus(404);
+        
+        let rental = rentalExists.rows[0]
+
+        if (rental.returnDate !== null) return res.sendStatus(400);
+
+        let todayDate = (new Date())
+        let rentDate = new Date(rental.rentDate)
+
+        let difference = todayDate.getTime() - rentDate.getTime();
+        let totalDays = difference / (1000 * 3600 * 24);
+
+        if (totalDays > rental.daysRented){
+            console.log("Entrou aqui")
+            let lateDays = totalDays - rental.daysRented
+       
+            let pricePerDay = Math.ceil(rental.originalPrice / rental.daysRented)
+            rental = {...rental, delayFee: pricePerDay * lateDays}
+        }
+        rental = {...rental, returnDate: todayDate.toISOString().split('T')[0]}
+
+        res.locals.finish = rental
+        next();
+        
+    } catch (error) {
+        console.log("Erro na validação da finalização do rental")
         res.status(500).send(error.message);
     }
 }
