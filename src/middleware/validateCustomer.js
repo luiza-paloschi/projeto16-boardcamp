@@ -10,7 +10,7 @@ export async function validateCustomer(req, res, next){
         if (error) return res.status(400).send(error.details[0].message);
         const customerExists = await db.query('SELECT * FROM customers WHERE cpf = $1;', [cpf]);
        
-        if (customerExists.rowCount !== 0) return res.status(409).send("Este cliente já está cadastrado!");
+        if (customerExists.rowCount !== 0) return res.sendStatus(409);
     
         res.locals.customer = {name, phone, cpf, birthday};
         next();
