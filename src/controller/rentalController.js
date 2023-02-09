@@ -48,3 +48,25 @@ export async function finishRental(_, res){
         res.status(500).send(error.message);
     }
 }
+
+export async function deleteRental(req, res){
+    const {id} = req.params;
+    const numberId = Number(id)
+
+    try {
+        const rentalExists =  await db.query(
+            `SELECT *
+            FROM rentals WHERE id = $1;`, [numberId])
+        if (rentalExists.rowCount === 0) return res.sendStatus(404);
+
+        const rental = rentalExists.rows[0];
+        if (rental.returnDate === null) return res.sendStatus(400)
+
+        await db.query(`DELETE FROM rentals WHERE id = $1;`, [numberId])
+        res.sendStatus(200);
+
+    } catch (error) {
+        console.log("Erro no delete de um rental");
+        res.status(500).send(error.message);
+    }
+}

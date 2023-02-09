@@ -1,4 +1,5 @@
 import { db } from "../database/database.js";
+import { idSchema } from "../schemas/idSchema.js";
 import { rentalSchema } from "../schemas/rentalSchema.js";
 
 
@@ -34,7 +35,8 @@ export async function validateFinish(req, res, next){
     const {id} = req.params;
     const numberId = Number(id)
     try {
-        //if (typeof id !== 'number' || id <= 0) return res.sendStatus(400)
+        const {error} = idSchema.validate({numberId}, { abortEarly: false })
+        if (error) return res.sendStatus(400);
         
 
         const rentalExists =  await db.query(
@@ -67,6 +69,6 @@ export async function validateFinish(req, res, next){
         
     } catch (error) {
         console.log("Erro na validação da finalização do rental")
-        res.status(500).send(error.message);
+        res.send(error.message);
     }
 }
