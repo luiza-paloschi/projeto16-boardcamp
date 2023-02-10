@@ -43,7 +43,7 @@ export async function finishRental(_, res){
     console.log(typeof finish.delayFee)
     try {
 
-        await db.query(`UPDATE rentals SET "returnDate"=$1, "delayFee"=$2 WHERE id=$3;`, [finish.returnDate, parseInt(finish.delayFee), finish.id]) 
+        await db.query(`UPDATE rentals SET "delayFee"=$1, "returnDate"=$2,  WHERE id=$3;`, [finish.delayFee, finish.returnDate, finish.id]) 
         res.sendStatus(200);
     } catch (error) {
         console.log("Erro na finalização de um rental");

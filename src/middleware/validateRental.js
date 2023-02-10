@@ -63,7 +63,7 @@ export async function validateFinish(req, res, next){
             console.log("Entrou aqui")
             let lateDays = totalDays - rental.daysRented
             let pricePerDay = Math.ceil(rental.originalPrice / rental.daysRented)
-            rental = {...rental, delayFee: pricePerDay * lateDays}
+            rental = {...rental, delayFee: parseInt(pricePerDay * lateDays)}
         }
         rental = {...rental, returnDate: todayDate.toISOString().split('T')[0]}
 
