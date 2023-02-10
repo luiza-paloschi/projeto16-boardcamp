@@ -39,9 +39,13 @@ export async function validateFinish(req, res, next){
         if (error) return res.sendStatus(401);
         
 
-        const rentalExists =  await db.query(
+        /*const rentalExists =  await db.query(
             `SELECT id, "customerId", "gameId", TO_CHAR("rentDate", 'YYYY-MM-DD') AS "rentDate", "daysRented", TO_CHAR("returnDate", 'YYYY-MM-DD')
              AS "returnDate", "originalPrice", "delayFee"
+            FROM rentals WHERE id = $1;`, [numberId])*/
+
+        const rentalExists =  await db.query(
+            `SELECT *
             FROM rentals WHERE id = $1;`, [numberId])
         if (rentalExists.rowCount === 0) return res.sendStatus(404);
         
@@ -49,16 +53,16 @@ export async function validateFinish(req, res, next){
 
         if (rental.returnDate !== null) return res.sendStatus(400);
 
-        let todayDate = new Date();
+        let todayDate = new Date("2023-02-13");
         let rentDate = new Date(rental.rentDate);
 
         let difference = todayDate.getTime() - rentDate.getTime();
-        let totalDays = difference / (1000 * 3600 * 24);
+        let totalDays = Math.ceil(difference / (1000 * 3600 * 24));
 
         if (totalDays > rental.daysRented){
             console.log("Entrou aqui")
             let lateDays = totalDays - rental.daysRented
-            let pricePerDay = rental.originalPrice / rental.daysRented
+            let pricePerDay = Math.ceil(rental.originalPrice / rental.daysRented)
             rental = {...rental, delayFee: pricePerDay * lateDays}
         }
         rental = {...rental, returnDate: todayDate.toISOString().split('T')[0]}

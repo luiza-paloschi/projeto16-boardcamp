@@ -39,9 +39,11 @@ export async function getRentals(_, res){
 
 export async function finishRental(_, res){
     const finish= res.locals.finish;
+    console.log(finish)
+    console.log(typeof finish.delayFee)
     try {
 
-        await db.query(`UPDATE rentals SET "returnDate"=$1, "delayFee"=$2 WHERE id=$3;`, [finish.returnDate, finish.delayFee, finish.id]) 
+        await db.query(`UPDATE rentals SET "returnDate"=$1, "delayFee"=$2 WHERE id=$3;`, [finish.returnDate, parseInt(finish.delayFee), finish.id]) 
         res.sendStatus(200);
     } catch (error) {
         console.log("Erro na finalização de um rental");
