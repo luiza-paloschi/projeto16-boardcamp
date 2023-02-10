@@ -59,7 +59,7 @@ export async function finishRental(_, res){
         
 
         if(requiredReturn.isBefore(rent.returnDate))
-            rent.delayFee = requiredReturn.diff(rent.returnDate, 'days') * rent.pricePerDay;
+            rent.delayFee = -(requiredReturn.diff(rent.returnDate, 'days') * rent.pricePerDay);
         else
             rent.delayFee = 0;
 
