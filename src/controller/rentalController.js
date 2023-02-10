@@ -1,5 +1,7 @@
 import { db } from "../database/database.js";
 
+import dayjs from "dayjs";
+
 export async function createRental(_, res){
     const rental = res.locals.rental;
     try {
@@ -38,9 +40,7 @@ export async function getRentals(_, res){
 }
 
 export async function finishRental(_, res){
-    const finish= res.locals.finish;
-    console.log(finish)
-    console.log(typeof finish.delayFee)
+    /*const finish= res.locals.finish;
     try {
 
         await db.query(`UPDATE rentals SET "delayFee"=$1, "returnDate"=$2,  WHERE id=$3;`, [finish.delayFee, finish.returnDate, finish.id]) 
@@ -48,6 +48,27 @@ export async function finishRental(_, res){
     } catch (error) {
         console.log("Erro na finalização de um rental");
         res.status(505).send(error.message);
+    } */
+    try {     
+        const rent = res.locals.rent;
+        
+        rent.returnDate = dayjs().format("YYYY-MM-DD");
+        rent.rentDate = dayjs(rent.rentDate);
+
+        const requiredReturn = rent.rentDate.add(rent.daysRented, 'day');
+        
+
+        if(requiredReturn.isBefore(rent.returnDate))
+            rent.delayFee = requiredReturn.diff(rent.returnDate, 'days') * rent.pricePerDay;
+        else
+            rent.delayFee = 0;
+
+        await db.query('UPDATE rentals SET "delayFee"=$1, "rentDate"=$2, "returnDate"=$3 WHERE id=$4', [rent.delayFee, rent.rentDate, rent.returnDate, rent.id]);
+
+        res.sendStatus(200);
+    }
+    catch(e) {
+        res.status(505).send(e.message);
     }
 }
 
