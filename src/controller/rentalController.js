@@ -45,7 +45,7 @@ export async function finishRental(_, res){
         res.sendStatus(200);
     } catch (error) {
         console.log("Erro na finalização de um rental");
-        res.status(500).send(error.message);
+        res.status(505).send(error.message);
     }
 }
 

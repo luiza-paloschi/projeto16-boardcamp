@@ -36,7 +36,7 @@ export async function validateFinish(req, res, next){
     const numberId = Number(id)
     try {
         const {error} = idSchema.validate({numberId}, { abortEarly: false })
-        if (error) return res.sendStatus(400);
+        if (error) return res.sendStatus(401);
         
 
         const rentalExists =  await db.query(
@@ -49,8 +49,8 @@ export async function validateFinish(req, res, next){
 
         if (rental.returnDate !== null) return res.sendStatus(400);
 
-        let todayDate = (new Date())
-        let rentDate = new Date(rental.rentDate)
+        let todayDate = new Date();
+        let rentDate = new Date(rental.rentDate);
 
         let difference = todayDate.getTime() - rentDate.getTime();
         let totalDays = difference / (1000 * 3600 * 24);
@@ -58,8 +58,7 @@ export async function validateFinish(req, res, next){
         if (totalDays > rental.daysRented){
             console.log("Entrou aqui")
             let lateDays = totalDays - rental.daysRented
-       
-            let pricePerDay = Math.ceil(rental.originalPrice / rental.daysRented)
+            let pricePerDay = rental.originalPrice / rental.daysRented
             rental = {...rental, delayFee: pricePerDay * lateDays}
         }
         rental = {...rental, returnDate: todayDate.toISOString().split('T')[0]}
@@ -69,6 +68,6 @@ export async function validateFinish(req, res, next){
         
     } catch (error) {
         console.log("Erro na validação da finalização do rental")
-        res.send(error.message);
+        res.status(504).send(error.message);
     }
 }
