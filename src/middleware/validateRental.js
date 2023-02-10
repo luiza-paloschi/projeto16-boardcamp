@@ -53,7 +53,7 @@ export async function validateFinish(req, res, next){
 
         if (rental.returnDate !== null) return res.sendStatus(400);
 
-        let todayDate = new Date("2023-02-13");
+        let todayDate = new Date();
         let rentDate = new Date(rental.rentDate);
 
         let difference = todayDate.getTime() - rentDate.getTime();
