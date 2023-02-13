@@ -17,58 +17,49 @@ export async function createRental(_, res){
 
 export async function getRentals(_, res){
     try {
-        const rentalsCustomer = await db.query(`SELECT rentals.*, to_char(rentals."rentDate", 'YYYY-MM-DD') as "rentDateFormated",
-        to_char(rentals."returnDate", 'YYYY-MM-DD') as "returnDateFormated",
-        customers.id AS id2, customers.name, games.id AS id3, games.name AS "nameGame"
-        FROM rentals 
-        INNER JOIN customers ON rentals."customerId"=customers.id
-        INNER JOIN games ON rentals."gameId"=games.id
+        
+        const rentals = await db.query(`
+        SELECT rentals.*, 
+               JSON_BUILD_OBJECT('id', customers.id, 'name', customers.name) AS customer,
+               JSON_BUILD_OBJECT('id', games.id, 'name', games.name) AS game
+        FROM rentals
+        INNER JOIN customers 
+            ON rentals."customerId"=customers.id
+        INNER JOIN games 
+            ON rentals."gameId"=games.id
         ;`);
 
-        const newArr = rentalsCustomer.rows.map( (item) => {
-            const object = {id: item.id, customerId: item.customerId, gameId: item.gameId, rentDate: item.rentDateFormated, 
-                daysRented: item.daysRented, returnDate: item.returnDateFormated, originalPrice: item.originalPrice, delayFee:item.delayFee, 
-                customer:{id: item.id2, name: item.name}, game:{id: item.id3, name: item.nameGame}};
-            return object
-        })
-
-        res.send(newArr)
+        res.send(rentals.rows)
     } catch (error) {
-        console.log("Erro no get de rentals");
         res.status(500).send(error.message);
     }
 }
 
 export async function finishRental(_, res){
-    /*const finish= res.locals.finish;
-    try {
-
-        await db.query(`UPDATE rentals SET "delayFee"=$1, "returnDate"=$2,  WHERE id=$3;`, [finish.delayFee, finish.returnDate, finish.id]) 
-        res.sendStatus(200);
-    } catch (error) {
-        console.log("Erro na finalização de um rental");
-        res.status(505).send(error.message);
-    } */
+   
     try {     
-        const rent = res.locals.rent;
+        const rent = res.locals.finish;
         
         rent.returnDate = dayjs().format("YYYY-MM-DD");
         rent.rentDate = dayjs(rent.rentDate);
 
-        const requiredReturn = rent.rentDate.add(rent.daysRented, 'day');
+        const shouldReturn = rent.rentDate.add(rent.daysRented, 'day');
         
+        if(shouldReturn.isBefore(rent.returnDate)){
+            rent.delayFee = -(shouldReturn.diff(rent.returnDate, 'days') * rent.pricePerDay);
+        } 
+        else {
+            rent.delayFee = null;
+        }
+            
 
-        if(requiredReturn.isBefore(rent.returnDate))
-            rent.delayFee = -(requiredReturn.diff(rent.returnDate, 'days') * rent.pricePerDay);
-        else
-            rent.delayFee = 0;
-
-        await db.query('UPDATE rentals SET "delayFee"=$1, "rentDate"=$2, "returnDate"=$3 WHERE id=$4', [rent.delayFee, rent.rentDate, rent.returnDate, rent.id]);
+        await db.query('UPDATE rentals SET "delayFee"=$1, "rentDate"=$2, "returnDate"=$3 WHERE id=$4', 
+        [rent.delayFee, rent.rentDate, rent.returnDate, rent.id]);
 
         res.sendStatus(200);
     }
-    catch(e) {
-        res.status(505).send(e.message);
+    catch(error) {
+        res.status(505).send(error.message);
     }
 }
 
